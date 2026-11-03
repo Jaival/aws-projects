@@ -1,6 +1,6 @@
 # 05 · Cloud Cost Watchdog with Auto-Shutdown
 
-> **Build order: #2** · Difficulty ⭐⭐ · ~1–2 weeks · Cost: ≈ $0–5/month
+> **Build order: #2** · Difficulty ⭐⭐ · lead cloud ~1–2 weeks · Azure cost: ≈ $0–5/month
 
 ## The problem
 Cloud bills grow quietly: a forgotten VM over the weekend, a dev AKS cluster left running, a resource
@@ -25,6 +25,32 @@ flowchart LR
     CR -->|summary| Teams[Email / Teams / Slack]
     F --> LA[Log Analytics<br/>audit of every action]
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Budget + alerts | **AWS Budgets** → SNS / email | Cost Management budget → Action Group | **Cloud Billing budget** → email + **Pub/Sub** topic |
+| Built-in automatic action | **Budget Actions** can apply an IAM/SCP policy or stop EC2/RDS instances | — (use Action Group → Function) | — (Pub/Sub → function) |
+| Find tagged resources | Resource Groups Tagging API / AWS Config / Resource Explorer | Resource Graph | **Cloud Asset Inventory** |
+| Scheduler | EventBridge Scheduler | Function timer trigger | Cloud Scheduler |
+| Automation code | Lambda (Python, `boto3`) | Functions (Python, `azure-mgmt-*`) | Cloud Run functions (Python, `google-cloud-*`) |
+| Stop actions | Stop EC2, ECS desired count → 0, **RDS stop**, EKS node group → 0 | Deallocate VMs, stop App Service, `az aks stop` | Stop Compute Engine VMs, GKE node pool → 0, Cloud SQL activation policy `NEVER` |
+| Cost data API | Cost Explorer API / CUR 2.0 data exports | Cost Management Query API / exports | **BigQuery billing export** (query with SQL) |
+| Anomaly detection | Cost Anomaly Detection | Cost anomaly alerts | Cost anomaly detection |
+| Tag/label policy | Tag policies (Organizations) + SCP | Azure Policy | Organization Policy / label checks in CI |
+
+**Differences that matter**
+- **AWS:** tags only appear in billing after you **activate them as cost allocation tags**. A stopped RDS instance **restarts automatically after 7 days** — your watchdog has to handle that. The Cost Explorer API charges per request, so cache results.
+- **GCP:** **labels** must be lowercase. Budgets **don't stop anything** on their own; Google's own "cap spending" example *disables billing on the project*, which can delete resources. Explain why you chose to stop resources instead. Cloud Run already scales to zero, so there's less to stop.
+- **Azure:** `deallocate`, not `stop`, is what stops compute billing for VMs.
+
+**Truly multi-cloud version:** one weekly report combining spend from all three bills, using one
+lowercase tagging standard (`project`, `owner`, `env`, `autoshutdown`). Optionally load all three billing
+exports into one place (e.g. BigQuery or DuckDB) and normalise them with the **FOCUS** open billing format,
+which all three clouds now support.
 
 ## Skills & concepts you'll learn
 

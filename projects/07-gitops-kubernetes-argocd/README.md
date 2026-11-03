@@ -1,6 +1,6 @@
-# 07 · GitOps AKS Platform with ArgoCD
+# 07 · GitOps Kubernetes Platform with ArgoCD (EKS · AKS · GKE)
 
-> **Build order: #8** · Difficulty ⭐⭐⭐⭐ · ~3–4 weeks · Cost: ≈ $30–150/month while running (node VMs — stop/destroy the cluster when idle)
+> **Build order: #8** · Difficulty ⭐⭐⭐⭐ · lead cloud ~3–4 weeks · Azure cost: ≈ $30–150/month while running (node VMs — stop/destroy the cluster when idle)
 
 ## The problem
 Teams deploy to Kubernetes with `kubectl apply` from laptops: nobody knows what's actually running,
@@ -29,6 +29,30 @@ flowchart LR
     end
     ACR -->|pull via kubelet identity| AKS
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Managed Kubernetes | **EKS** (or EKS Auto Mode) | **AKS** | **GKE** (Standard or Autopilot) |
+| Pod → cloud identity | **EKS Pod Identity** (or IRSA) | Entra Workload ID | GKE Workload Identity Federation |
+| Node autoscaling | **Karpenter** | Cluster autoscaler / node auto-provisioning | Cluster autoscaler / Autopilot |
+| Container registry | ECR | ACR | Artifact Registry |
+| Ingress / Gateway | AWS Load Balancer Controller | Application Routing add-on | GKE Gateway controller |
+| Secrets in pods | **External Secrets Operator** (portable — use it on all three) ← Secrets Manager | ← Key Vault | ← Secret Manager |
+| Native GitOps option | — (Argo CD is the usual choice) | Flux GitOps extension | Config Sync |
+| Control-plane cost | Hourly fee per cluster | Free tier available | Free tier credit covers one cluster |
+
+**Differences that matter**
+- Everything *inside* the cluster (Helm charts, Kustomize overlays, ArgoCD apps, Kyverno policies, Grafana dashboards) is **identical** on all three — that's the point of Kubernetes. Only the cluster Terraform, identity wiring, ingress class and storage class differ. Put the differences in Kustomize overlays: `overlays/eks`, `overlays/aks`, `overlays/gke`.
+- **Identity is the hard part:** each cloud links Kubernetes service accounts to cloud identities differently. Document the three side by side.
+- **External Secrets Operator** instead of the per-cloud CSI drivers means one secrets pattern everywhere.
+
+**Truly multi-cloud version (the headline of this repo):** one **ArgoCD hub** with EKS, AKS and GKE
+registered as clusters, deploying from one Git repo with an `ApplicationSet` (cluster generator). Demo:
+one PR rolls out to three clouds; delete a deployment on GKE and watch it heal.
 
 ## Skills & concepts you'll learn
 

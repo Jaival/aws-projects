@@ -1,6 +1,6 @@
 # 08 · Real-Time IoT Telemetry Pipeline
 
-> **Build order: #6** · Difficulty ⭐⭐⭐ · ~2 weeks · Cost: ≈ $5–80/month (Stream Analytics and ADX are the main costs — stop them when idle)
+> **Build order: #6** · Difficulty ⭐⭐⭐ · lead cloud ~2 weeks · Azure cost: ≈ $5–80/month (Stream Analytics and ADX are the main costs — stop them when idle)
 
 ## The problem
 Thousands of devices (sensors, machines, vehicles) send readings every few seconds. The business wants
@@ -24,6 +24,28 @@ flowchart LR
     ADX --> G[Grafana / Power BI<br/>live dashboard]
     IOTH -->|device twin changes| DT[Device management]
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Device gateway (MQTT) | **AWS IoT Core** | **IoT Hub** | ⚠️ *No native service* (IoT Core retired 2023) → **EMQX / Mosquitto** on GKE or a VM, bridged to Pub/Sub |
+| Device identity | X.509 certificates + IoT policies | SAS keys / X.509 | Broker authentication (X.509 / JWT) |
+| Device state | **Device Shadow** | **Device twin** | Your own (e.g. Firestore document per device) |
+| Routing | IoT **rules** (SQL) | Message routing | Broker bridge rules |
+| Stream | Kinesis Data Streams | Event Hubs | Pub/Sub |
+| Stream processing | Managed Service for Apache Flink | Stream Analytics | **Dataflow** (Apache Beam) |
+| Hot store | Timestream for InfluxDB / OpenSearch | Azure Data Explorer | **BigQuery** (streaming inserts) |
+| Cold store | S3 + Athena | ADLS Gen2 | Cloud Storage + BigQuery external tables |
+| Dashboards | Amazon Managed Grafana | Azure Managed Grafana | Grafana (self-hosted) / Looker Studio |
+
+**Differences that matter**
+- **GCP has no managed IoT gateway** — and that's your best interview story for this project: "I had to choose between a partner broker and running EMQX myself; here's the trade-off." It also shows why a portable MQTT layer reduces lock-in.
+- **Windowing** looks different: Stream Analytics SQL, Flink SQL/Java, Beam pipelines (Python). Implement the same 1-minute tumbling-window average on all three and compare.
+- Keep the **device simulator identical** — speak plain MQTT and change only the endpoint and certificates per cloud.
+- **Cost:** Flink KPUs, Stream Analytics streaming units and Dataflow workers all bill while running. Stop or delete them after each test.
 
 ## Skills & concepts you'll learn
 

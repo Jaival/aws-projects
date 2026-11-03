@@ -1,6 +1,6 @@
-# 01 · Self-Healing Web App on Azure
+# 01 · Self-Healing Web App
 
-> **Build order: #3** · Difficulty ⭐⭐ · ~2 weeks · Cost: ≈ $15–60/month while running (destroy after demo)
+> **Build order: #3** · Difficulty ⭐⭐ · lead cloud ~2 weeks · Azure cost: ≈ $15–60/month while running (destroy after demo)
 
 ## The problem
 Apps fail in boring ways: memory leaks, hung processes, a bad instance, a traffic spike. At 3 a.m. you
@@ -29,6 +29,29 @@ flowchart LR
     AG --> N[Email / Teams]
     AS[Autoscale rules] -.-> APP
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Hosting (containers) | **ECS on Fargate** + Application Load Balancer | App Service (Web App for Containers) | **Cloud Run** |
+| VM-based alternative | Auto Scaling Group + ELB health checks | VM Scale Sets + automatic repairs | Managed Instance Group + **autohealing** |
+| Health checks | ALB target-group health checks + ECS container health checks | App Service Health check + Auto-Heal | Cloud Run startup/liveness probes |
+| Autoscaling | ECS Service Auto Scaling (target tracking) | App Service autoscale rules | Request-concurrency autoscaling (built in) |
+| Safe deploy / rollback | ECS **deployment circuit breaker** with automatic rollback, or CodeDeploy blue/green | Deployment slots + swap | **Revisions** + traffic splitting |
+| Database | RDS PostgreSQL | Azure SQL / PostgreSQL | Cloud SQL PostgreSQL |
+| Secrets | Secrets Manager | Key Vault | Secret Manager |
+| Monitoring | CloudWatch + X-Ray / Application Signals | Application Insights | Cloud Monitoring + Cloud Trace |
+| Alert → remediation | CloudWatch alarm → EventBridge → Lambda / SSM Automation | Alert → Action Group → Function | Alerting policy → Pub/Sub → Cloud Run function |
+| Synthetic check | CloudWatch Synthetics canary | Availability test | Uptime check |
+| Fault injection | AWS FIS | Chaos Studio | Chaos endpoints in the app (no native service) |
+
+**Differences that matter**
+- **Cloud Run** gives you scaling and replacement of failed instances almost for free and can scale to zero. The interesting work there is probes, revisions and alerting.
+- **ECS** needs the most wiring (VPC, subnets per AZ, ALB, target groups, task definitions), but you learn the most about networking. The deployment circuit breaker is a native "self-healing deploy".
+- Use the same container image and the same OpenTelemetry instrumentation on all three — only the exporter configuration changes.
 
 ## Skills & concepts you'll learn
 

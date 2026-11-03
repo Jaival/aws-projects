@@ -1,6 +1,6 @@
-# 09 · Secrets-Free CI/CD with GitHub OIDC
+# 09 · Secrets-Free CI/CD with GitHub OIDC (AWS · Azure · GCP)
 
-> **Build order: #1** · Difficulty ⭐⭐ · ~1 week · Cost: ≈ $0–2/month (a storage account for Terraform state)
+> **Build order: #1** · Difficulty ⭐⭐ · lead cloud ~1 week · Azure cost: ≈ $0–2/month (a storage account for Terraform state)
 
 ## The problem
 The classic way to let a pipeline deploy to Azure is to create a service principal, generate a
@@ -27,6 +27,28 @@ sequenceDiagram
     Entra-->>GH: Azure access token (short-lived)
     GH->>ARM: terraform plan / apply
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Trust GitHub's issuer | **IAM OIDC identity provider** for `token.actions.githubusercontent.com` | **Federated identity credential** on an app registration / user-assigned managed identity | **Workload Identity Pool** + OIDC **provider** |
+| Restrict *which* repo/branch | Role **trust policy** conditions on `token.actions.githubusercontent.com:sub` (and `:aud = sts.amazonaws.com`) | Exact `subject` on the federated credential | **Attribute mapping** + **attribute condition** (e.g. `assertion.repository == 'Jaival/<repo>'`) |
+| Exchange call | `sts:AssumeRoleWithWebIdentity` | Entra token endpoint (client assertion) | Security Token Service → direct resource access or **service account impersonation** |
+| GitHub action | `aws-actions/configure-aws-credentials` (`role-to-assume`) | `azure/login` (`client-id`, `tenant-id`, `subscription-id`) | `google-github-actions/auth` (`workload_identity_provider`, `service_account`) |
+| Terraform state | S3 backend (`use_lockfile = true`) | `azurerm` backend (blob lease) | `gcs` backend |
+| Read-only "plan" identity | Role with `ReadOnlyAccess` | `Reader` | `roles/viewer` (or narrower) |
+
+**Differences that matter**
+- **AWS:** a trust policy that checks only `aud` and not `sub` lets **any GitHub repo in the world** assume your role. This is a real, common misconfiguration — show the correct condition in your write-up.
+- **GCP:** the attribute condition is the security boundary; without a tight one, other repositories could use your pool. Know the difference between granting roles **directly to the federated principal** and **impersonating a service account**.
+- **Azure:** subjects are exact matches (no wildcards on standard federated credentials), so you need one credential per branch/environment, or use the newer *flexible federated identity credentials* where available.
+
+**Truly multi-cloud version:** one reusable workflow with a `cloud` input, plus a matrix job that
+authenticates to all three clouds in one run, with **zero** entries in GitHub Secrets. This is the
+backbone every later project deploys through.
 
 ## Skills & concepts you'll learn
 

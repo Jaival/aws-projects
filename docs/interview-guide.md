@@ -28,9 +28,17 @@ Keep a `docs/notes.md` in each project folder with:
 - How do you deploy changes safely? How do you roll back?
 - How do you know it's working? (Monitoring, alerts, dashboards.)
 
+## Multi-cloud questions (expect these now)
+
+- **"Why did you build it on three clouds?"** → To learn the patterns behind the products. You can then pick the right tool for a team instead of defaulting to the one you know.
+- **"Would you recommend multi-cloud to a company?"** → Usually not for a single workload: it doubles the skills needed, adds egress cost, and you end up on the lowest common denominator. It does make sense for acquisitions, regulation, best-of-breed services (e.g. BigQuery for analytics) or negotiating leverage. Having a nuanced answer is what makes you sound senior.
+- **"What was different on each cloud?"** → Quote your `comparison.md` files: IAM models, AWS's per-AZ subnets vs GCP's global VPC, three ways to write a saga, measured failover times.
+- **"How did you keep the code portable?"** → Adapters (ports & adapters), OpenTelemetry, containers, Terraform modules with the same interface — and where you *chose* lock-in on purpose because the managed service was worth it.
+
 ## The Well-Architected lens
 
-Microsoft's **Well-Architected Framework** has five pillars. Framing answers in these terms signals seniority:
+All three clouds publish a **Well-Architected Framework** (AWS adds a sixth pillar, *sustainability*).
+Framing answers in these terms signals seniority:
 
 | Pillar | Example sentence |
 |---|---|

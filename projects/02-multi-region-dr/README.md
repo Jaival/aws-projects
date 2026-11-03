@@ -1,6 +1,6 @@
 # 02 · Multi-Region Disaster Recovery Failover
 
-> **Build order: #7** · Difficulty ⭐⭐⭐⭐ · ~2–3 weeks · Cost: ≈ $40–150/month while running (two regions — destroy after the drill)
+> **Build order: #7** · Difficulty ⭐⭐⭐⭐ · lead cloud ~2–3 weeks · Azure cost: ≈ $40–150/month while running (two regions — destroy after the drill)
 
 ## The problem
 Availability zones protect against a datacentre failure, but not a whole-region outage (rare, but it
@@ -30,6 +30,29 @@ flowchart TB
     DRILL[GitHub Actions: dr-drill.yml<br/>simulate outage → fail over → measure] -.-> FD & SQL1
     MON[Availability tests from multiple locations] -.-> FD
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Global routing / failover | **Route 53** failover routing + health checks, or Global Accelerator / CloudFront origin failover | Front Door (or Traffic Manager) | **Global external Application Load Balancer** (one anycast IP, backends in many regions) |
+| Relational DB replication | **Aurora Global Database** (managed switchover/failover) | SQL failover groups | **Cloud SQL cross-region replica** (promote on failover; Enterprise Plus adds DR replica switchover) or Spanner multi-region |
+| Object storage | S3 Cross-Region Replication (+ Replication Time Control) | GZRS / RA-GZRS | **Dual-region bucket** (+ turbo replication) |
+| Container images | ECR cross-region replication | ACR geo-replication | Artifact Registry multi-region repository |
+| Failover orchestration | Application Recovery Controller / scripts | Scripts / runbooks | Scripts / runbooks |
+| Fault injection | AWS FIS | Chaos Studio | Manual (block traffic with firewall rules) |
+| Network per region | One VPC per region (+ peering/TGW if needed) | One VNet per region | **One global VPC** with regional subnets |
+
+**Differences that matter**
+- **GCP** is the simplest for multi-region networking: one global VPC and one global load balancer. **AWS** and **Azure** need a network stack per region.
+- **DNS-based failover** (Route 53, Traffic Manager) depends on client DNS caching (TTL), so it's slower than **anycast** failover (Front Door, Google global LB, Global Accelerator). Measure it — real numbers make a great comparison table.
+- **RPO** differs: Aurora Global Database typically replicates in about a second, SQL failover groups and Cloud SQL replicas are also asynchronous, and Spanner multi-region gives RPO 0 at a higher price. Explain the trade-off.
+
+**Stretch — cross-cloud DR:** primary on one cloud, warm standby on another (e.g. Azure → AWS),
+with DNS failover and database replication between them. Then write up honestly why most companies
+choose multi-*region* over multi-*cloud* DR (data replication complexity, egress cost, double the skills).
 
 ## Skills & concepts you'll learn
 

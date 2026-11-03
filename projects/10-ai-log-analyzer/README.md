@@ -1,6 +1,6 @@
-# 10 · AI-Powered Log Analyzer with Azure OpenAI
+# 10 · AI-Powered Log Analyzer (Azure OpenAI · Bedrock · Vertex AI)
 
-> **Build order: #10 (capstone)** · Difficulty ⭐⭐⭐⭐ · ~2–3 weeks · Cost: ≈ $5–30/month (pay-per-token — set token limits)
+> **Build order: #10 (capstone)** · Difficulty ⭐⭐⭐⭐ · lead cloud ~2–3 weeks · Azure cost: ≈ $5–30/month (pay-per-token — set token limits)
 
 ## The problem
 When something breaks, engineers spend most of the incident *reading*: thousands of log lines,
@@ -27,6 +27,29 @@ flowchart LR
     STORE -->|index resolved incidents| SRCH
     F -.-> AI[App Insights: tokens, latency, cost per analysis]
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| LLM platform | **Amazon Bedrock** | **Azure OpenAI** in Azure AI Foundry | **Vertex AI** |
+| Auth (no keys) | IAM role | Managed identity | Service account |
+| Log query API | CloudWatch Logs Insights (`StartQuery` / `GetQueryResults`) | Log Analytics Query API (KQL) | Cloud Logging API / BigQuery (SQL) |
+| Managed RAG | Bedrock Knowledge Bases | Azure AI Search | Vertex AI RAG Engine |
+| Safety filters | Bedrock Guardrails | Azure AI Content Safety | Vertex safety settings / Model Armor |
+| Hosting | Lambda | Functions | Cloud Run |
+
+**Design for three providers**
+- Two small interfaces in `src/`: `LLMClient.complete(prompt, schema)` and `LogSource.query(time_range, filters)`, with one implementation per cloud. (A library like **LiteLLM** can cover the LLM side; writing a thin adapter yourself teaches more.)
+- Some models are available on more than one platform (for example, Claude is on Bedrock, Vertex AI and Azure AI Foundry), so you can compare the *same* model across clouds as well as different models.
+- Use one portable vector store (**PostgreSQL + pgvector**) or each cloud's managed RAG, and compare the two approaches.
+- Natural language → query: the model must generate **KQL**, **Logs Insights QL** or **SQL** depending on the cloud. Give it the right schema and examples per cloud.
+
+**The killer comparison:** run the **same evaluation set** (past incidents with known root causes)
+through each provider and publish a table of accuracy, latency, and cost per analysis. Few portfolios have
+real, measured LLM comparisons.
 
 ## Skills & concepts you'll learn
 

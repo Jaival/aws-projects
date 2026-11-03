@@ -1,6 +1,6 @@
 # 03 · Zero-Trust Landing Zone with Terraform
 
-> **Build order: #4** · Difficulty ⭐⭐⭐⭐ · ~3 weeks · Cost: ≈ $5/month without firewall; Azure Firewall adds a lot (deploy it for the demo only)
+> **Build order: #4** · Difficulty ⭐⭐⭐⭐ · lead cloud ~3 weeks · Azure cost: ≈ $5/month without firewall; Azure Firewall adds a lot (deploy it for the demo only)
 
 ## The problem
 When a company moves to Azure, every team creating subscriptions and networks their own way leads to
@@ -43,6 +43,33 @@ flowchart TB
     POL[Azure Policy initiatives] -.governs.-> MG
     LA[Central Log Analytics + Defender for Cloud] -.diagnostics.-> HUB & SPOKE1 & SPOKE2
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Landing-zone framework | **Control Tower** (+ Account Factory for Terraform) | Azure Landing Zones / Azure Verified Modules | Google Cloud setup / Cloud Foundation Fabric (FAST) |
+| Hierarchy | Organization → OUs → **accounts** | Management groups → subscriptions | Organization → folders → **projects** |
+| Guardrails | **SCPs** (+ RCPs) + AWS Config rules | Azure Policy | **Organization Policy** constraints |
+| Hub-and-spoke | **Transit Gateway** + inspection VPC | Hub VNet + peering | **Shared VPC** (host project + service projects) / NCC |
+| Central firewall | AWS Network Firewall | Azure Firewall | Cloud NGFW (firewall policies) |
+| Private access to managed services | VPC **interface/gateway endpoints** | Private Endpoints | **Private Service Connect**, Private Google Access |
+| Data-exfiltration perimeter | VPC endpoint policies + RCPs | Private endpoints + policies | **VPC Service Controls** (service perimeters) |
+| Admin access without public IPs | SSM Session Manager | Azure Bastion | IAP TCP forwarding |
+| Central logs | Org CloudTrail → **Log Archive account** | Diagnostic settings → Log Analytics | **Aggregated log sink** at org/folder level |
+| Posture | Security Hub + GuardDuty | Defender for Cloud | Security Command Center |
+| Just-in-time admin | IAM Identity Center + temporary elevated access | PIM | Privileged Access Manager (PAM) |
+
+**Differences that matter**
+- **AWS:** SCPs **never grant** permissions; they only set the maximum. The multi-*account* model (separate Log Archive, Audit, Network and workload accounts) is the isolation pattern, not resource groups. Control Tower builds most of this for you; building a few pieces by hand with Terraform teaches you what it does.
+- **GCP:** **Shared VPC** is the normal hub model: one host project owns the network, and workload projects use its subnets. **VPC Service Controls** has no direct equivalent elsewhere — learn it, it's a common interview question for GCP roles.
+- **Azure:** Policy can *auto-remediate* (`deployIfNotExists`); SCPs and Org Policies mostly *deny*.
+
+**Cost hot-spots per cloud:** Network Firewall + Transit Gateway attachments + NAT gateways (AWS, all
+hourly); Azure Firewall; Cloud NGFW Enterprise (GCP — basic firewall policies are cheap). Make the
+firewall optional with a variable on every cloud.
 
 ## Skills & concepts you'll learn
 

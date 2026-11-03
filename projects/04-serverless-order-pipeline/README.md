@@ -1,6 +1,6 @@
 # 04 · Serverless Event-Driven Order Pipeline
 
-> **Build order: #5** · Difficulty ⭐⭐⭐ · ~2 weeks · Cost: ≈ $1–15/month (mostly Service Bus Standard + Cosmos DB)
+> **Build order: #5** · Difficulty ⭐⭐⭐ · lead cloud ~2 weeks · Azure cost: ≈ $1–15/month (mostly Service Bus Standard + Cosmos DB)
 
 ## The problem
 A synchronous order flow (API → payment → inventory → email, all in one request) is slow and fragile: if
@@ -27,6 +27,29 @@ flowchart LR
     EG --> F5[Function: Analytics]
     SB -.max delivery exceeded.-> DLQ[Dead-letter queue] --> ALERT[Alert + replay tool]
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| API front door | API Gateway (HTTP API) | API Management (consumption) | API Gateway (or Cloud Run directly) |
+| Functions | Lambda | Azure Functions | Cloud Run functions |
+| Orders queue | **SQS** (FIFO for ordering) | **Service Bus** queue | **Pub/Sub** (ordering keys) |
+| Saga orchestration | **Step Functions** (JSON/ASL state machine) | **Durable Functions** (code) | **Workflows** (YAML) |
+| Orders database | DynamoDB | Cosmos DB | Firestore |
+| Change stream → projections | DynamoDB Streams | Cosmos DB change feed | Firestore triggers via Eventarc |
+| Domain events fan-out | EventBridge (or SNS) | Event Grid | Eventarc / Pub/Sub topic |
+| Dead-lettering | SQS **redrive policy** → DLQ | Built-in DLQ per queue/subscription | **Dead-letter topic** set on the subscription |
+| Duplicate protection | FIFO deduplication (5-minute window) + Powertools idempotency | Duplicate detection | Exactly-once delivery (pull subscriptions) |
+| Tracing | X-Ray | Application Insights | Cloud Trace |
+
+**Differences that matter**
+- **Three ways to write a saga:** a visual state machine (Step Functions), ordinary code (Durable Functions), YAML (Workflows). Comparing them is a great `comparison.md` section: testability, versioning, cost per state transition, debugging.
+- **Ordering:** SQS FIFO (message group ID), Service Bus sessions, Pub/Sub ordering keys — all give per-key ordering with throughput trade-offs.
+- **Data modelling:** the partition key choice in DynamoDB, Cosmos DB and Firestore follows the same rules, but DynamoDB punishes mistakes the most. Learn single-table design.
+- Keep `src/` business logic identical; put the cloud specifics behind `OrderQueue`, `OrderStore` and `EventPublisher` adapters.
 
 ## Skills & concepts you'll learn
 

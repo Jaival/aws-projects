@@ -26,6 +26,16 @@ with Diagram("Self-Healing Web App", filename="docs/architecture", show=False):
     fd >> app >> db
 ```
 
+## Diagrams for a multi-cloud project
+
+Make **four** per project:
+1. **Cloud-neutral** diagram using generic boxes ("queue", "function", "NoSQL DB") — this is the design.
+2. One diagram **per cloud** (`architecture-aws.png`, `architecture-azure.png`, `architecture-gcp.png`) with that cloud's official icons, laid out **in the same positions** as the neutral one so they're easy to compare side by side.
+
+Official icon sets: AWS Architecture Icons, Azure Architecture Icons, Google Cloud icons — all free to
+download and available as draw.io libraries. The Python `diagrams` library has all three
+(`diagrams.aws.*`, `diagrams.azure.*`, `diagrams.gcp.*`), so one script can generate all four diagrams.
+
 ## Rules for a clear diagram
 
 1. **Flow left → right** (or top → bottom). Users / sources on the left, data stores on the right.

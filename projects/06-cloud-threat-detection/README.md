@@ -1,6 +1,6 @@
-# 06 · Threat Detection with Microsoft Sentinel
+# 06 · Cloud Threat Detection (SIEM) across AWS · Azure · GCP
 
-> **Build order: #9** · Difficulty ⭐⭐⭐ · ~2 weeks · Cost: free trial period on a new workspace, then pay per GB ingested — keep ingestion small
+> **Build order: #9** · Difficulty ⭐⭐⭐ · lead cloud ~2 weeks · Azure cost: free trial period on a new workspace, then pay per GB ingested — keep ingestion small
 
 ## The problem
 Logs are scattered across sign-ins, Azure activity, VMs, firewalls and apps. Attackers are noisy only if
@@ -30,6 +30,29 @@ flowchart LR
     SEN --> HUNT[Hunting queries + notebooks]
     TI[Threat intelligence feed] --> SEN
 ```
+
+## Multi-cloud implementation
+
+The diagram above is the **Azure reference implementation** (Azure is the lead cloud — see the [roadmap](../../ROADMAP.md#1-the-strategy-design-once-build-three-times)). Build it there first, then port it using the mapping below. Full service list: [multi-cloud service map](../../docs/multi-cloud-service-map.md).
+
+| Component | AWS | Azure | GCP |
+|---|---|---|---|
+| Audit logs | **CloudTrail** (org trail) | Activity Log + Entra ID sign-in/audit logs | **Cloud Audit Logs** |
+| Network logs | VPC Flow Logs | VNet flow logs / Firewall logs | VPC Flow Logs / firewall rules logging |
+| Built-in threat detection | **GuardDuty** | **Defender for Cloud** | **Security Command Center** (Event Threat Detection) |
+| Posture / findings hub | Security Hub | Defender for Cloud | Security Command Center |
+| SIEM | Security Lake (OCSF) + OpenSearch, or a 3rd-party SIEM | **Microsoft Sentinel** | Google Security Operations (licensed) |
+| Automated response | EventBridge rule on finding → Lambda (e.g. isolate instance with a security group) | Sentinel automation rule → Logic App | SCC finding → Pub/Sub → Cloud Run function (e.g. firewall rule) |
+| Detection language | OpenSearch PPL/SQL / Athena SQL | **KQL** | YARA-L (SecOps) / SQL in BigQuery |
+
+**Recommended design**
+1. **Per cloud:** turn on the native detection (GuardDuty, Defender, SCC), run a honeypot VM, and build one automated response with that cloud's event tooling.
+2. **One SIEM across all three:** use **Sentinel** as the central SIEM. It has data connectors for AWS (CloudTrail/GuardDuty via S3 + SQS) and GCP (Audit Logs via Pub/Sub). Write detections that work across clouds, e.g. "console login from a new country on *any* cloud".
+3. **Normalisation:** each cloud's log schema differs. Learn **ASIM** (Sentinel's normalised schemas) and **OCSF** (Security Lake's open schema), and why normalisation makes one rule cover three clouds.
+
+**Differences that matter**
+- MITRE ATT&CK has **cloud matrices** (IaaS, SaaS, identity providers). Map each detection to a technique and note which clouds it covers.
+- Cost: CloudTrail management events (first copy) are free, but data events cost; GuardDuty, SCC Premium and Sentinel all bill by volume. Use trials and short test windows on each cloud.
 
 ## Skills & concepts you'll learn
 
