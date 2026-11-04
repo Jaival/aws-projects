@@ -1,0 +1,64 @@
+# Runs on every pull request: formatting + validation of every Terraform folder.
+# Needs no cloud credentials. Project 09 adds the OIDC plan/apply pipeline on top of this.
+name: terraform-checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.13"
+      - name: Check formatting
+        run: terraform fmt -check -recursive -diff
+
+  discover:
+    name: find Terraform folders
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.find.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        # Every folder that contains at least one .tf file becomes a matrix entry.
+        run: |
+          dirs=$(find . -name '*.tf' -not -path '*/.terraform/*' -printf '%h\n' | sort -u | sed 's|^\./||' | jq -R . | jq -cs .)
+          echo "Found: $dirs"
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: validate ${{ matrix.dir }}
+    needs: discover
+    if: needs.discover.outputs.dirs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.discover.outputs.dirs) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.13"
+      - name: terraform init (no backend)
+        run: terraform init -backend=false -input=false
+      - name: terraform validate
+        run: terraform validate

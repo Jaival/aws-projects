@@ -5,7 +5,10 @@ with **Terraform**, deployed through **GitHub Actions with OIDC (no stored secre
 architecture diagrams and a cross-cloud comparison, and torn down after the demo.
 
 > 📍 Start with the **[ROADMAP](ROADMAP.md)** (strategy, build order, timeline, definition of done), then
-> **[Foundations](docs/00-foundations.md)** and the **[multi-cloud service map](docs/multi-cloud-service-map.md)**.
+> **[Foundations](docs/00-foundations.md)**, the **[multi-cloud service map](docs/multi-cloud-service-map.md)**,
+> and the **[Phase 0 exercises](foundations/)**.
+
+![terraform-checks](https://github.com/Jaival/aws-projects/actions/workflows/terraform-checks.yml/badge.svg)
 
 ## Projects
 
@@ -69,6 +72,8 @@ Which skills each project exercises (● = core, ○ = supporting):
 │   ├── multi-cloud-service-map.md  # AWS ↔ Azure ↔ GCP equivalents and key differences
 │   ├── diagrams.md                 # how to make the architecture diagrams
 │   └── interview-guide.md          # how to present each project
+├── foundations/                    # Phase 0 hands-on: hello-storage + remote state on each cloud
+├── scripts/check-tools.sh          # are the CLIs installed and logged in?
 ├── modules/                        # shared Terraform modules, per cloud
 │   ├── aws/  ├── azure/  └── gcp/
 ├── .github/workflows/              # reusable multi-cloud Terraform workflow (project 09)

@@ -104,7 +104,7 @@ Know the difference — interviewers do.
 - [ ] Create accounts on all three clouds and **set billing alerts on day 1** on each
 - [ ] Install: AWS CLI, Azure CLI, gcloud CLI, Terraform, Git, Docker, VS Code
 - [ ] Work through [docs/00-foundations.md](docs/00-foundations.md) and the [service map](docs/multi-cloud-service-map.md)
-- [ ] Deploy and destroy a storage bucket on each cloud with Terraform
+- [ ] Deploy and destroy a storage bucket on each cloud with Terraform — hands-on exercises in [foundations/](foundations/)
 - **Milestone:** you can explain how AWS accounts, Azure subscriptions and GCP projects compare, and how IAM differs on each.
 
 ### Phase 1 — Delivery & guardrails (weeks 5–9) · Projects 09, 05
