@@ -74,9 +74,9 @@ Which skills each project exercises (● = core, ○ = supporting):
 │   └── interview-guide.md          # how to present each project
 ├── foundations/                    # Phase 0 hands-on: hello-storage + remote state on each cloud
 ├── scripts/check-tools.sh          # are the CLIs installed and logged in?
-├── modules/                        # shared Terraform modules, per cloud
+├── modules/                        # shared Terraform modules, per cloud (added from project 03 on)
 │   ├── aws/  ├── azure/  └── gcp/
-├── .github/workflows/              # reusable multi-cloud Terraform workflow (project 09)
+├── .github/workflows/              # terraform-checks.yml today; reusable deploy workflow arrives with project 09
 └── projects/
     └── NN-project-name/
         ├── README.md               # learning guide → becomes the project write-up

@@ -21,7 +21,7 @@ sequenceDiagram
     participant ARM as Azure Resource Manager
     Dev->>GH: push / open PR
     GH->>GHOIDC: request ID token (aud=api://AzureADTokenExchange)
-    GHOIDC-->>GH: signed JWT (sub=repo:Jaival/aws-projects:environment:prod)
+    GHOIDC-->>GH: signed JWT (sub=repo:OWNER/REPO:environment:prod)
     GH->>Entra: exchange JWT for access token
     Entra->>Entra: verify signature + issuer + subject match federated credential
     Entra-->>GH: Azure access token (short-lived)
@@ -55,7 +55,7 @@ backbone every later project deploys through.
 ### OpenID Connect (OIDC) & workload identity federation
 - **OIDC** is an identity layer on top of OAuth 2.0. An *identity provider* issues a signed **JWT** (JSON Web Token) that says "this is who I am".
 - GitHub runs its own OIDC provider (`https://token.actions.githubusercontent.com`). Each workflow run can request a token whose **claims** describe it: repository, branch, environment, workflow.
-- In Entra ID you create a **federated identity credential** on an app registration (or user-assigned managed identity) that says: *"trust tokens from GitHub's issuer **only** if the subject is `repo:Jaival/aws-projects:environment:prod`."*
+- In Entra ID you create a **federated identity credential** on an app registration (or user-assigned managed identity) that says: *"trust tokens from GitHub's issuer **only** if the subject is `repo:OWNER/REPO:environment:prod`."*
 - The trust is in **who signed the token and what it claims**, not in a shared secret. Nothing to leak, nothing to rotate.
 - Learn to decode a JWT (jwt.io) and read `iss`, `sub`, `aud`, `exp`.
 
@@ -68,10 +68,12 @@ backbone every later project deploys through.
 
 Pattern to aim for: **two identities** — a read-only "plan" identity for PRs and a "deploy" identity locked to the `prod` environment.
 
+> ⚠️ **The repository name is part of the subject.** `OWNER/REPO` must match the repo's name on GitHub exactly. If the repo is renamed after the trust is set up, every federated credential (Azure), role trust policy (AWS) and attribute condition (GCP) stops matching and logins fail — so settle the repo name **before** building this project.
+
 ### Terraform remote state in Azure Storage
 - Backend `azurerm` storing state in a blob container; blob leases give **state locking**.
 - Authenticate the backend with OIDC too (`use_oidc = true`, `use_azuread_auth = true`) so no storage keys are needed.
-- Bootstrap problem: the state storage account must exist before Terraform can use it → create it once with a small script or a separate `bootstrap/` Terraform config.
+- Bootstrap problem: the state storage must exist before Terraform can use it. Phase 0 already solved this — [`foundations/02-state-backend/`](../../foundations/02-state-backend/) creates it on each cloud with its own local state. Reuse it; don't build a second one.
 
 ### GitHub Actions in depth
 - `permissions: id-token: write, contents: read` (required for OIDC; also least-privilege for the `GITHUB_TOKEN`).
@@ -87,7 +89,7 @@ Pattern to aim for: **two identities** — a read-only "plan" identity for PRs a
 - Branch protection: require PR + passing checks before merging into `main`.
 
 ## Build plan
-1. **Bootstrap**: resource group + storage account + container for Terraform state (script in `bootstrap/`).
+1. **Bootstrap**: already done in Phase 0 ([`foundations/02-state-backend/`](../../foundations/02-state-backend/)). Check the three state stores are deployed and note their `backend_config` outputs. The pipeline identities you create in step 2 will also need data access to them (Azure: `Storage Blob Data Contributor` on the state storage account).
 2. **Identity**: app registration (or user-assigned managed identity) → federated credentials for `pull_request` and `environment:prod` → role assignments (`Reader` for plan, `Contributor` scoped to the project resource groups for deploy). *Do this in Terraform with the `azuread` provider for bonus points.*
 3. **Workflow**: `fmt → validate → tflint → checkov → plan` on PR; `apply` on merge to `main` behind the `prod` environment.
 4. **Reusable workflow**: `.github/workflows/terraform-reusable.yml` taking `working-directory` as input.
@@ -101,7 +103,7 @@ Essentially free — one storage account. GitHub Actions minutes are free for pu
 - Separate `dev` and `prod` subscriptions with different identities.
 - Add **Infracost** to post the monthly cost delta of each PR.
 - Drift detection: a nightly scheduled `terraform plan -detailed-exitcode` that opens an issue on drift.
-- Do the same for AWS (`aws-actions/configure-aws-credentials` with an IAM OIDC provider) — great talking point since your repo started as `aws-projects`.
+- A weekly scheduled "canary" workflow that only logs in to all three clouds and runs an identity check (`aws sts get-caller-identity`, `az account show`, `gcloud auth list`) — it catches broken trust (expired setup, renamed repo) before a real deploy does.
 
 ## Interview talking points
 - "Why is OIDC better than a client secret?" → no long-lived credential, scoped by subject claim, tokens expire in minutes, nothing to rotate.
