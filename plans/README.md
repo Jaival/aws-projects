@@ -33,8 +33,10 @@ batch 3 starts after batch 2 is merged (its tests assert what batch 2 adds).
 | [004](004-azure-state-data-role.md) | Azure state backend grants blob data access | 2 | P1 | S | batch 1 merged | DONE |
 | [005](005-autoshutdown-tag-and-naming.md) | `autoshutdown` tag everywhere; naming rule matches code | 2 | P1 | S | 004 (same branch), 002 optional | DONE |
 | [006](006-small-fixes-license-tfversion-s3-lifecycle.md) | LICENSE, Terraform version check, S3 state version expiry | 2 | P3 | S | 005 (same branch) | DONE |
-| [007](007-terraform-mock-tests.md) | Mocked `terraform test` for all foundations folders, in CI | 3 | P2 | M | 001, 004, 005, 006 | TODO |
-| [008](008-pin-actions-and-dependabot.md) | Pin actions to SHAs; add Dependabot | 3 | P2 | S | 001, 007 | TODO |
+| [007](007-terraform-mock-tests.md) | Mocked `terraform test` for all foundations folders, in CI | 3 | P2 | M | 001, 004, 005, 006 | DONE |
+| [008](008-pin-actions-and-dependabot.md) | Pin actions to SHAs; add Dependabot | 3 | P2 | S | 001, 007 | DONE |
+
+Notes from execution: 007 needed one `mock_resource` (a well-formed fake storage account ID) in the Azure hello-storage test; no assertions were dropped. 008 pinned `actions/checkout` v4.4.0 (`11d5960a326750d5838078e36cf38b85af677262`) and `hashicorp/setup-terraform` v3.1.2 (`b9cd54a3c349d3f38e8881555d616ced269862dd`).
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
