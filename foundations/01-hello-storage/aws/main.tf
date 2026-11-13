@@ -19,9 +19,10 @@ provider "aws" {
   # Every resource this provider creates gets these tags automatically.
   default_tags {
     tags = {
-      project = var.project
-      env     = var.env
-      owner   = var.owner
+      project      = var.project
+      env          = var.env
+      owner        = var.owner
+      autoshutdown = tostring(var.autoshutdown) # "true" / "false" — tag values must be strings
     }
   }
 }

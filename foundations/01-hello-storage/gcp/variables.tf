@@ -34,6 +34,12 @@ variable "owner" {
   default     = "jaival"
 }
 
+variable "autoshutdown" {
+  description = "May the cost watchdog (project 05) stop these resources outside working hours?"
+  type        = bool
+  default     = true
+}
+
 # GCP is the only cloud that needs this: every resource lives inside a project.
 # (On AWS the account comes from your credentials; on Azure the subscription does.)
 variable "gcp_project_id" {

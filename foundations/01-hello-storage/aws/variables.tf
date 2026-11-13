@@ -33,3 +33,9 @@ variable "owner" {
   type        = string
   default     = "jaival"
 }
+
+variable "autoshutdown" {
+  description = "May the cost watchdog (project 05) stop these resources outside working hours?"
+  type        = bool
+  default     = true
+}

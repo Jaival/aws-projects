@@ -96,6 +96,6 @@ Which skills each project exercises (● = core, ○ = supporting):
   | Primary | `ap-south-1` | `centralindia` | `asia-south1` |
   | Secondary (DR) | `ap-south-2` | `southindia` | `asia-south2` |
 
-- **Naming**: `<type>-<project>-<env>-<region-short>`, e.g. `rg-p01-dev-cin`, `p01-dev-aps1-alb`. Follow each cloud's naming rules (S3/GCS buckets are globally unique; Azure storage accounts allow no dashes).
+- **Naming**: Azure `<type>-<project>-<env>-<name>` (e.g. `rg-p01-dev-web`); AWS and GCP `<project>-<env>-<name>` (e.g. `p01-dev-web-alb`). Add a short region code (`cin`, `aps1`, `as1`) only when one project deploys to more than one region (project 02), and a random suffix where names are globally unique (S3/GCS buckets, Azure storage accounts — which also allow no dashes).
 - **Tags / labels** on everything, **lowercase** so the same keys work on GCP: `project`, `owner`, `env`, `autoshutdown`.
 - **No secrets in Git**, ever. CI uses OIDC on all three clouds; workloads use IAM roles, managed identities or service accounts.

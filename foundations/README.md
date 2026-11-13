@@ -43,7 +43,7 @@ Work through [docs/00-foundations.md](../docs/00-foundations.md) and the
 
 Folder: [`01-hello-storage/`](01-hello-storage/). The same thing — a private, versioned, encrypted
 storage bucket — built three ways. Each folder takes the **same variables** (`project`, `env`,
-`region`, `owner`) and returns the **same outputs** (`bucket_name`, `bucket_url`). That's the pattern
+`region`, `owner`, `autoshutdown`) and returns the **same outputs** (`bucket_name`, `bucket_url`). That's the pattern
 every project in this repo follows.
 
 ```bash

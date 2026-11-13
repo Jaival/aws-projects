@@ -18,9 +18,10 @@ provider "aws" {
 
   default_tags {
     tags = {
-      project = "tfstate"
-      env     = "shared"
-      owner   = var.owner
+      project      = "tfstate"
+      env          = "shared"
+      owner        = var.owner
+      autoshutdown = "false" # state storage must never be stopped or cleaned up by the watchdog
     }
   }
 }

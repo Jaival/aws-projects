@@ -13,7 +13,7 @@ Read `README.md` and `ROADMAP.md` for the plan; this file is the rules for chang
 
 ## Rules for Terraform
 
-- **Same inputs and outputs on every cloud.** Sibling `aws/`, `azure/`, `gcp/` folders take the same variables (at minimum `project`, `env`, `region`, `owner`) and return the same output names. GCP may add `gcp_project_id`; document any other difference in a comment.
+- **Same inputs and outputs on every cloud.** Sibling `aws/`, `azure/`, `gcp/` folders take the same variables (at minimum `project`, `env`, `region`, `owner`, `autoshutdown`) and return the same output names. GCP may add `gcp_project_id`; document any other difference in a comment.
 - **Tags / labels are lowercase** (GCP requires it): `project`, `env`, `owner`, `autoshutdown`. Apply them through provider defaults (`default_tags`, `default_labels`) or a `local.tags` map on Azure.
 - **No secrets, ever.** No keys, passwords or tokens in code, variables, state or docs. CI uses OIDC; storage uses identity-based access (Azure: `shared_access_key_enabled = false`).
 - Storage is private, versioned and encrypted by default. Say why in a comment when you deviate.

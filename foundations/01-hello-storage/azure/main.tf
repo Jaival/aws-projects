@@ -25,9 +25,10 @@ provider "azurerm" {
 
 locals {
   tags = {
-    project = var.project
-    env     = var.env
-    owner   = var.owner
+    project      = var.project
+    env          = var.env
+    owner        = var.owner
+    autoshutdown = tostring(var.autoshutdown) # "true" / "false" — tag values must be strings
   }
 }
 
