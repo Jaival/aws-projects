@@ -30,9 +30,9 @@ batch 3 starts after batch 2 is merged (its tests assert what batch 2 adds).
 | [001](001-ci-single-gate-job.md) | CI has one stable status check for branch protection | 1 | P1 | S | — | DONE |
 | [002](002-add-claude-md.md) | Add `CLAUDE.md` with the repo rules | 1 | P1 | S | — | DONE |
 | [003](003-sync-project-09-guide.md) | Sync the project 09 guide and README layout with the repo | 1 | P2 | S | — | DONE |
-| [004](004-azure-state-data-role.md) | Azure state backend grants blob data access | 2 | P1 | S | batch 1 merged | TODO |
-| [005](005-autoshutdown-tag-and-naming.md) | `autoshutdown` tag everywhere; naming rule matches code | 2 | P1 | S | 004 (same branch), 002 optional | TODO |
-| [006](006-small-fixes-license-tfversion-s3-lifecycle.md) | LICENSE, Terraform version check, S3 state version expiry | 2 | P3 | S | 005 (same branch) | TODO |
+| [004](004-azure-state-data-role.md) | Azure state backend grants blob data access | 2 | P1 | S | batch 1 merged | DONE |
+| [005](005-autoshutdown-tag-and-naming.md) | `autoshutdown` tag everywhere; naming rule matches code | 2 | P1 | S | 004 (same branch), 002 optional | DONE |
+| [006](006-small-fixes-license-tfversion-s3-lifecycle.md) | LICENSE, Terraform version check, S3 state version expiry | 2 | P3 | S | 005 (same branch) | DONE |
 | [007](007-terraform-mock-tests.md) | Mocked `terraform test` for all foundations folders, in CI | 3 | P2 | M | 001, 004, 005, 006 | TODO |
 | [008](008-pin-actions-and-dependabot.md) | Pin actions to SHAs; add Dependabot | 3 | P2 | S | 001, 007 | TODO |
 
