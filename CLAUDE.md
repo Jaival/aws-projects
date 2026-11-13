@@ -32,6 +32,10 @@ cd <changed terraform folder> && terraform init -backend=false -input=false && t
 ```
 
 ```bash
+cd <changed terraform folder> && terraform test
+```
+
+```bash
 bash -n scripts/check-tools.sh
 ```
 

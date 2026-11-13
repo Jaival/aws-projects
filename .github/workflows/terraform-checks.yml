@@ -62,6 +62,9 @@ jobs:
         run: terraform init -backend=false -input=false
       - name: terraform validate
         run: terraform validate
+      - name: terraform test (mock providers, no cloud credentials)
+        if: hashFiles(format('{0}/tests/*.tftest.hcl', matrix.dir)) != ''
+        run: terraform test
 
   # One stable check name to require in branch protection, however many folders the matrix has.
   all-checks:
