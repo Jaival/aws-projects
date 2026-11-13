@@ -74,3 +74,15 @@ resource "azurerm_storage_container" "state" {
   storage_account_id    = azurerm_storage_account.state.id
   container_access_type = "private"
 }
+
+# Who is running Terraform right now (you, signed in with `az login`).
+data "azurerm_client_config" "current" {}
+
+# Storage keys are disabled, so reading and writing state uses your Entra ID identity.
+# That needs a *data-plane* role: being Owner of the subscription (control plane) is not enough.
+# Project 09 adds the same role for the CI pipeline's identities.
+resource "azurerm_role_assignment" "state_blob_contributor" {
+  scope                = azurerm_storage_account.state.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
+}

@@ -104,6 +104,8 @@ They have `prevent_destroy` set because deleting state storage makes Terraform f
 and watch the state move into the cloud. Try running `terraform apply` from two terminals at once to
 see **state locking** in action.
 
+> **Azure note:** the state account has storage keys switched off, so Terraform reaches the state with *your* Entra ID identity. The bootstrap config gives you the `Storage Blob Data Contributor` role on that account for exactly this reason. Role assignments can take a few minutes to take effect — if `terraform init -migrate-state` answers with a 403, wait a little and run it again.
+
 **Questions:**
 1. How does each backend lock state? (S3 lock file / blob lease / GCS lock file.)
 2. Why is versioning enabled on all three?
