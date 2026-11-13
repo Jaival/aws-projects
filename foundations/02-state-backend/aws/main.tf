@@ -63,6 +63,30 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
   }
 }
 
+# Without this, every old version of every state file is kept (and billed) forever.
+# Keep the 10 newest old versions; the GCP backend does the same with a lifecycle_rule.
+resource "aws_s3_bucket_lifecycle_configuration" "state" {
+  bucket = aws_s3_bucket.state.id
+
+  rule {
+    id     = "expire-old-state-versions"
+    status = "Enabled"
+
+    filter {} # applies to every object in the bucket
+
+    noncurrent_version_expiration {
+      newer_noncurrent_versions = 10
+      noncurrent_days           = 30
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.state]
+}
+
 # Only allow HTTPS access to the state bucket.
 resource "aws_s3_bucket_policy" "tls_only" {
   bucket = aws_s3_bucket.state.id

@@ -24,6 +24,18 @@ for tool in git terraform aws az gcloud docker jq; do
   fi
 done
 
+# The configs need Terraform >= 1.10 (S3 backend `use_lockfile`).
+if command -v terraform >/dev/null 2>&1; then
+  read -r tf_major tf_minor < <(terraform version | head -1 | sed -E 's/^Terraform v([0-9]+)\.([0-9]+).*/\1 \2/')
+  if [[ "${tf_major:-}" =~ ^[0-9]+$ && "${tf_minor:-}" =~ ^[0-9]+$ ]]; then
+    if (( tf_major < 1 || (tf_major == 1 && tf_minor < 10) )); then
+      bad "terraform ${tf_major}.${tf_minor} is too old — this repo needs 1.10 or newer"
+    fi
+  else
+    warn "could not read the terraform version"
+  fi
+fi
+
 for tool in tflint checkov; do
   command -v "$tool" >/dev/null 2>&1 && ok "$tool (optional)" || warn "$tool not installed (optional, used from project 09 on)"
 done
