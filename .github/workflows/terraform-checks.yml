@@ -62,3 +62,17 @@ jobs:
         run: terraform init -backend=false -input=false
       - name: terraform validate
         run: terraform validate
+
+  # One stable check name to require in branch protection, however many folders the matrix has.
+  all-checks:
+    name: all checks passed
+    if: always()
+    needs: [fmt, discover, validate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job failed or was cancelled
+        run: |
+          echo "fmt=${{ needs.fmt.result }} discover=${{ needs.discover.result }} validate=${{ needs.validate.result }}"
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            exit 1
+          fi

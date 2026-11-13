@@ -116,7 +116,7 @@ see **state locking** in action.
 
 1. Create a branch, mis-indent a line in any `.tf` file, open a pull request → watch it fail.
 2. Run `terraform fmt -recursive`, push → watch it pass.
-3. Turn on **branch protection** for `main` (Settings → Branches): require a PR and the `terraform-checks` jobs to pass.
+3. Turn on **branch protection** for `main` (Settings → Branches): require a PR and the **`all checks passed`** status check. That one check covers formatting and every `validate` job, so the rule never needs updating when new Terraform folders are added.
 
 ---
 
